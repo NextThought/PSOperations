@@ -28,7 +28,7 @@ public struct Location: CapabilityType {
             case .NotDetermined: completion(.NotDetermined)
             case .Restricted: completion(.NotAvailable)
             case .Denied: completion(.Denied)
-            case .Authorized: completion(.Authorized)
+            case .AuthorizedWhenInUse, .AuthorizedAlways: completion(.Authorized)
         }
     }
     
@@ -67,7 +67,7 @@ private class LocationAuthorizer: NSObject, CLLocationManagerDelegate {
             self.completion = nil
             
             switch status {
-                case .Authorized:
+                case .AuthorizedWhenInUse, .AuthorizedAlways:
                     completion(.Authorized)
                 case .Denied:
                     completion(.Denied)
