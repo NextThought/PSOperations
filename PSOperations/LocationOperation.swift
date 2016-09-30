@@ -52,14 +52,8 @@ public class LocationOperation: Operation, CLLocationManagerDelegate {
             let manager = CLLocationManager()
             manager.desiredAccuracy = self.accuracy
             manager.delegate = self
-            
-            if #available(iOS 9.0, *) {
-                manager.requestLocation()
-            } else {
-                #if !os(tvOS) && !os(watchOS)
-                    manager.startUpdatingLocation()
-                #endif
-            }
+			
+			manager.requestLocation()
             
             self.manager = manager
         }
