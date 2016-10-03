@@ -277,13 +277,13 @@ public class Operation: NSOperation {
     // MARK: Execution and Cancellation
     
     override final public func start() {
-        // NSOperation.start() contains important logic that shouldn't be bypassed.
-        super.start()
-        
-        // If the operation has been cancelled, we still need to enter the "Finished" state.
-        if cancelled {
-            finish()
-        }
+		// If the operation has been cancelled, we still need to enter the "Finished" state.
+		guard !cancelled else {
+			finish()
+			return
+		}
+		
+		main()
     }
     
     override final public func main() {
