@@ -13,15 +13,15 @@ struct TestCondition: OperationCondition {
     
     static let name = "TestCondition"
     static let isMutuallyExclusive = false
-    var dependencyOperation: NSOperation?
+    var dependencyOperation: Operation?
 
     var conditionBlock: () -> Bool = { true }
     
-    func dependencyForOperation(operation: Operation) -> NSOperation? {
+    func dependencyForOperation(_ operation: Operation) -> Operation? {
         return dependencyOperation
     }
     
-    func evaluateForOperation(operation: Operation, completion: OperationConditionResult -> Void) {
+    func evaluateForOperation(_ operation: Operation, completion: (OperationConditionResult) -> Void) {
         if conditionBlock() {
             completion(.Satisfied)
         } else {
@@ -40,26 +40,26 @@ class TestObserver: OperationObserver {
     var didProduceBlock: (()->())?
     
     
-    func operationDidStart(operation: Operation) {
+    func operationDidStart(_ operation: Operation) {
         if let didStartBlock = didStartBlock {
             didStartBlock()
         }
     }
     
-    func operation(operation: Operation, didProduceOperation newOperation: NSOperation) {
+    func operation(_ operation: Operation, didProduceOperation newOperation: Operation) {
         if let didProduceBlock = didProduceBlock {
             didProduceBlock()
         }
     }
     
-    func operationDidCancel(operation: Operation) {
+    func operationDidCancel(_ operation: Operation) {
         
         if let didCancelBlock = didCancelBlock {
             didCancelBlock()
         }
     }
     
-    func operationDidFinish(operation: Operation, errors: [NSError]) {
+    func operationDidFinish(_ operation: Operation, errors: [NSError]) {
         self.errors = errors
         
         if let didEndBlock = didEndBlock {
@@ -71,17 +71,19 @@ class TestObserver: OperationObserver {
 
 class PSOperationsTests: XCTestCase {
     
-    override func setUp() {
-        var dot: dispatch_once_t = 0
-        dispatch_once(&dot, { () -> Void in
+    private lazy var __once: () = { () -> Void in
             
-        })
+        }()
+    
+    override func setUp() {
+        var dot: Int = 0
+        _ = self.__once
     }
     
     func testAddingMultipleDeps() {
-        let op = NSOperation()
+        let op = Operation()
         
-        let deps = [NSOperation(),NSOperation(),NSOperation()]
+        let deps = [Operation(),Operation(),Operation()]
         
         op.addDependencies(deps)
         
@@ -90,22 +92,22 @@ class PSOperationsTests: XCTestCase {
     
     func testStandardOperation() {
         
-        let expectation = self.expectationWithDescription("block")
+        let expectation = self.expectation(description: "block")
         
         let opQueue = OperationQueue()
         
-        let op = NSBlockOperation { () -> Void in
+        let op = BlockOperation { () -> Void in
             expectation.fulfill()
         }
         
         opQueue.addOperation(op)
         
-        waitForExpectationsWithTimeout(1.0, handler: nil)
+        waitForExpectations(timeout: 1.0, handler: nil)
     }
     
     func testBlockOperation_noConditions_noDependencies() {
         
-        let expectation = self.expectationWithDescription("block")
+        let expectation = self.expectation(description: "block")
         
         let opQueue = OperationQueue()
         
@@ -115,13 +117,13 @@ class PSOperationsTests: XCTestCase {
         
         opQueue.addOperation(op)
         
-        waitForExpectationsWithTimeout(1.0, handler: nil)
+        waitForExpectations(timeout: 1.0, handler: nil)
     }
     
     
     func testOperation_withPassingCondition_noDependencies() {
         
-        let expectation = self.expectationWithDescription("block")
+        let expectation = self.expectation(description: "block")
         
         let opQueue = OperationQueue()
         
@@ -133,7 +135,7 @@ class PSOperationsTests: XCTestCase {
         
         opQueue.addOperation(op)
         
-        waitForExpectationsWithTimeout(1.0, handler: nil)
+        waitForExpectations(timeout: 1.0, handler: nil)
     }
     
     func testOperation_withFailingCondition_noDependencies() {
@@ -144,16 +146,16 @@ class PSOperationsTests: XCTestCase {
             XCTFail("Should not have run the block operation")
         }
         
-        keyValueObservingExpectationForObject(op, keyPath: "isCancelled") {
+        keyValueObservingExpectation(for: op, keyPath: "isCancelled") {
             (op, changes) -> Bool in
-            if let op = op as? NSOperation {
-                return op.cancelled
+            if let op = op as? Operation {
+                return op.isCancelled
             }
             
             return false
         }
         
-        XCTAssertFalse(op.cancelled, "Should not yet have cancelled the operation")
+        XCTAssertFalse(op.isCancelled, "Should not yet have cancelled the operation")
         
         var condition = TestCondition()
 
@@ -161,7 +163,7 @@ class PSOperationsTests: XCTestCase {
             return false
         }
         
-        let exp = expectationWithDescription("observer")
+        let exp = expectation(description: "observer")
         
         let observer = TestObserver()
         
@@ -174,13 +176,13 @@ class PSOperationsTests: XCTestCase {
         op.addObserver(observer)
         opQueue.addOperation(op)
         
-        waitForExpectationsWithTimeout(1.0, handler: nil)
+        waitForExpectations(timeout: 1.0, handler: nil)
     }
     
     func testOperation_withPassingCondition_andConditionDependency_noDependencies() {
         
-        let expectation = self.expectationWithDescription("block")
-        let expectation2 = self.expectationWithDescription("block2")
+        let expectation = self.expectation(description: "block")
+        let expectation2 = self.expectation(description: "block2")
         
         var fulfilledExpectations = [XCTestExpectation]()
         
@@ -201,15 +203,15 @@ class PSOperationsTests: XCTestCase {
         
         opQueue.addOperation(op)
         
-        waitForExpectationsWithTimeout(1.0) {
+        waitForExpectations(timeout: 1.0) {
             _ in
             XCTAssertEqual(fulfilledExpectations, [expectation2, expectation], "Expectations fulfilled out of order")
         }
     }
     
     func testOperation_noCondition_hasDependency() {
-        let expectation = expectationWithDescription("block")
-        let expectationDependency = expectationWithDescription("block2")
+        let expectation = self.expectation(description: "block")
+        let expectationDependency = self.expectation(description: "block2")
         
         var fulfilledExpectations = [XCTestExpectation]()
         
@@ -230,21 +232,21 @@ class PSOperationsTests: XCTestCase {
         opQueue.addOperation(op)
         opQueue.addOperation(opDependency)
         
-        waitForExpectationsWithTimeout(1.0) {
+        waitForExpectations(timeout: 1.0) {
             _ in
             XCTAssertEqual(fulfilledExpectations, [expectationDependency, expectation], "Expectations fulfilled out of order")
         }
     }
     
     func testGroupOperation() {
-        let exp1 = expectationWithDescription("block1")
-        let exp2 = expectationWithDescription("block2")
+        let exp1 = expectation(description: "block1")
+        let exp2 = expectation(description: "block2")
         
-        let op1 = NSBlockOperation {
+        let op1 = BlockOperation {
             exp1.fulfill()
         }
         
-        let op2 = NSBlockOperation {
+        let op2 = BlockOperation {
             exp2.fulfill()
         }
         
@@ -263,14 +265,14 @@ class PSOperationsTests: XCTestCase {
         
         opQ.addOperation(groupOp)
         
-        waitForExpectationsWithTimeout(5.0, handler: nil)
+        waitForExpectations(timeout: 5.0, handler: nil)
     }
     
     func testGroupOperation_cancelBeforeExecuting() {
-        let exp1 = expectationWithDescription("block1")
-        let exp2 = expectationWithDescription("block2")
+        let exp1 = expectation(description: "block1")
+        let exp2 = expectation(description: "block2")
         
-        let op1 = NSBlockOperation {
+        let op1 = BlockOperation {
             XCTFail("should not execute -- cancelled")
         }
         
@@ -278,7 +280,7 @@ class PSOperationsTests: XCTestCase {
             exp1.fulfill()
         }
         
-        let op2 = NSBlockOperation {
+        let op2 = BlockOperation {
             XCTFail("should not execute -- cancelled")
         }
         
@@ -299,18 +301,18 @@ class PSOperationsTests: XCTestCase {
         
         let opQ = OperationQueue()
         
-        opQ.suspended = true
+        opQ.isSuspended = true
         opQ.addOperation(groupOp)
         groupOp.cancel()
-        opQ.suspended = false
+        opQ.isSuspended = false
         
-        waitForExpectationsWithTimeout(5.0, handler: nil)
+        waitForExpectations(timeout: 5.0, handler: nil)
     }
     
     func testDelayOperation() {
-        let delay: NSTimeInterval = 0.1
+        let delay: TimeInterval = 0.1
         
-        let then = NSDate()
+        let then = Date()
         let op = DelayOperation(interval: delay)
         
         keyValueObservingExpectationForObject(op, keyPath: "isFinished") {
@@ -324,18 +326,18 @@ class PSOperationsTests: XCTestCase {
         
         OperationQueue().addOperation(op)
         
-        waitForExpectationsWithTimeout(delay + 1) {
+        waitForExpectations(timeout: delay + 1) {
             _ in
-            let now = NSDate()
-            let diff = now.timeIntervalSinceDate(then)
+            let now = Date()
+            let diff = now.timeIntervalSince(then)
             XCTAssertTrue(diff >= delay, "Didn't delay long enough")
         }
     }
     
     func testDelayOperation_With0() {
-        let delay: NSTimeInterval = 0.0
+        let delay: TimeInterval = 0.0
         
-        let then = NSDate()
+        let then = Date()
         let op = DelayOperation(interval: delay)
         
         keyValueObservingExpectationForObject(op, keyPath: "isFinished") {
@@ -349,20 +351,20 @@ class PSOperationsTests: XCTestCase {
         
         OperationQueue().addOperation(op)
         
-        waitForExpectationsWithTimeout(delay + 1) {
+        waitForExpectations(timeout: delay + 1) {
             _ in
-            let now = NSDate()
-            let diff = now.timeIntervalSinceDate(then)
+            let now = Date()
+            let diff = now.timeIntervalSince(then)
             XCTAssertTrue(diff >= delay, "Didn't delay long enough")
         }
     }
     
     func testDelayOperation_WithDate() {
-        let delay: NSTimeInterval = 1
-        let date = NSDate().dateByAddingTimeInterval(delay)
+        let delay: TimeInterval = 1
+        let date = Date().addingTimeInterval(delay)
         let op = DelayOperation(until: date)
         
-        let then = NSDate()
+        let then = Date()
         keyValueObservingExpectationForObject(op, keyPath: "isFinished") {
             (op, changes) -> Bool in
             if let op = op as? NSOperation {
@@ -374,10 +376,10 @@ class PSOperationsTests: XCTestCase {
         
         OperationQueue().addOperation(op)
         
-        waitForExpectationsWithTimeout(delay + 1) {
+        waitForExpectations(timeout: delay + 1) {
             _ in
-            let now = NSDate()
-            let diff = now.timeIntervalSinceDate(then)
+            let now = Date()
+            let diff = now.timeIntervalSince(then)
             XCTAssertTrue(diff >= delay, "Didn't delay long enough")
         }
     }
@@ -390,7 +392,7 @@ class PSOperationsTests: XCTestCase {
         
         var running = false
         
-        let exp = expectationWithDescription("op2")
+        let exp = expectation(description: "op2")
         
         let op = BlockOperation {
             running = true
@@ -420,15 +422,15 @@ class PSOperationsTests: XCTestCase {
         opQ.addOperation(delayOp)
         opQ.addOperation(op)
         
-        waitForExpectationsWithTimeout(0.9, handler: nil)
+        waitForExpectations(timeout: 0.9, handler: nil)
     }
     
     func testConditionObserversCalled() {
         
-        let startExp = expectationWithDescription("startExp")
-        let cancelExp = expectationWithDescription("cancelExp")
-        let finishExp = expectationWithDescription("finishExp")
-        let produceExp = expectationWithDescription("produceExp")
+        let startExp = expectation(description: "startExp")
+        let cancelExp = expectation(description: "cancelExp")
+        let finishExp = expectation(description: "finishExp")
+        let produceExp = expectation(description: "produceExp")
         
         var op: BlockOperation!
         op = BlockOperation {
@@ -456,7 +458,7 @@ class PSOperationsTests: XCTestCase {
         let q = OperationQueue()
         q.addOperation(op)
         
-        waitForExpectationsWithTimeout(5.0, handler: nil)
+        waitForExpectations(timeout: 5.0, handler: nil)
     }
     
     func testSilentCondition_failure() {
@@ -467,7 +469,7 @@ class PSOperationsTests: XCTestCase {
             XCTFail("should not run")
         }
         
-        let exp = expectationWithDescription("")
+        let exp = expectation(description: "")
         
         testCondition.conditionBlock = {
             exp.fulfill()
@@ -484,11 +486,11 @@ class PSOperationsTests: XCTestCase {
         
         operation.addCondition(silentCondition)
         
-        keyValueObservingExpectationForObject(operation, keyPath: "isCancelled") {
+        keyValueObservingExpectation(for: operation, keyPath: "isCancelled") {
             (op, changes) -> Bool in
             
-            if let op = op as? NSOperation {
-                return op.cancelled
+            if let op = op as? Operation {
+                return op.isCancelled
             }
             
             return false
@@ -496,7 +498,7 @@ class PSOperationsTests: XCTestCase {
         
         opQ.addOperation(operation)
         
-        waitForExpectationsWithTimeout(1.0, handler: nil)
+        waitForExpectations(timeout: 1.0, handler: nil)
     }
     
     func testNegateCondition_failure() {
@@ -512,11 +514,11 @@ class PSOperationsTests: XCTestCase {
         
         operation.addCondition(negateCondition)
         
-        keyValueObservingExpectationForObject(operation, keyPath: "isCancelled") {
+        keyValueObservingExpectation(for: operation, keyPath: "isCancelled") {
             (op, changes) -> Bool in
             
-            if let op = op as? NSOperation {
-                return op.cancelled
+            if let op = op as? Operation {
+                return op.isCancelled
             }
             
             return false
@@ -526,12 +528,12 @@ class PSOperationsTests: XCTestCase {
         
         opQ.addOperation(operation)
 
-        waitForExpectationsWithTimeout(1.0, handler: nil)
+        waitForExpectations(timeout: 1.0, handler: nil)
     }
     
     func testNegateCondition_success() {
         
-        let exp = expectationWithDescription("")
+        let exp = expectation(description: "")
         
         let operation = BlockOperation {
             exp.fulfill()
@@ -548,7 +550,7 @@ class PSOperationsTests: XCTestCase {
         
         opQ.addOperation(operation)
         
-        waitForExpectationsWithTimeout(1.0, handler: nil)
+        waitForExpectations(timeout: 1.0, handler: nil)
     }
     
     func testNoCancelledDepsCondition_aDepCancels() {
@@ -562,21 +564,21 @@ class PSOperationsTests: XCTestCase {
         
         operation.addDependency(dependencyOperation)
 
-        keyValueObservingExpectationForObject(dependencyOperation, keyPath: "isCancelled") {
+        keyValueObservingExpectation(for: dependencyOperation, keyPath: "isCancelled") {
             (op, changes) -> Bool in
             
-            if let op = op as? NSOperation {
-                return op.cancelled
+            if let op = op as? Operation {
+                return op.isCancelled
             }
             
             return false
         }
         
-        keyValueObservingExpectationForObject(operation, keyPath: "isCancelled") {
+        keyValueObservingExpectation(for: operation, keyPath: "isCancelled") {
             (op, changes) -> Bool in
             
-            if let op = op as? NSOperation {
-                return op.cancelled
+            if let op = op as? Operation {
+                return op.isCancelled
             }
             
             return false
@@ -584,10 +586,10 @@ class PSOperationsTests: XCTestCase {
         
         let opQ = OperationQueue()
         
-        keyValueObservingExpectationForObject(opQ, keyPath: "operationCount") {
+        keyValueObservingExpectation(for: opQ, keyPath: "operationCount") {
             (opQ, changes) -> Bool in
             
-            if let opQ = opQ as? NSOperationQueue {
+            if let opQ = opQ as? OperationQueue {
                 return opQ.operationCount == 0
             }
             
@@ -600,14 +602,14 @@ class PSOperationsTests: XCTestCase {
         opQ.addOperation(dependencyOperation)
         dependencyOperation.cancel()
         
-        waitForExpectationsWithTimeout(1.0, handler: nil)
+        waitForExpectations(timeout: 1.0, handler: nil)
     }
     
     func testOperationRunsEvenIfDepCancels() {
         
         let dependencyOperation = BlockOperation {}
         
-        let exp = expectationWithDescription("")
+        let exp = expectation(description: "")
         
         let operation = BlockOperation {
             exp.fulfill()
@@ -615,11 +617,11 @@ class PSOperationsTests: XCTestCase {
         
         operation.addDependency(dependencyOperation)
         
-        keyValueObservingExpectationForObject(dependencyOperation, keyPath: "isCancelled") {
+        keyValueObservingExpectation(for: dependencyOperation, keyPath: "isCancelled") {
             (op, changes) -> Bool in
             
-            if let op = op as? NSOperation {
-                return op.cancelled
+            if let op = op as? Operation {
+                return op.isCancelled
             }
             
             return false
@@ -631,19 +633,19 @@ class PSOperationsTests: XCTestCase {
         opQ.addOperation(dependencyOperation)
         dependencyOperation.cancel()
         
-        waitForExpectationsWithTimeout(10.0, handler: nil)
+        waitForExpectations(timeout: 10.0, handler: nil)
     }
     
     func testCancelledOperationLeavesQueue() {
         
         let operation = BlockOperation { }
-        let operation2 = NSBlockOperation { }
+        let operation2 = BlockOperation { }
         
-        keyValueObservingExpectationForObject(operation, keyPath: "isCancelled") {
+        keyValueObservingExpectation(for: operation, keyPath: "isCancelled") {
             (op, changes) -> Bool in
             
-            if let op = op as? NSOperation {
-                return op.cancelled
+            if let op = op as? Operation {
+                return op.isCancelled
             }
             
             return false
@@ -651,17 +653,17 @@ class PSOperationsTests: XCTestCase {
         
         let opQ = OperationQueue()
         opQ.maxConcurrentOperationCount = 1
-        opQ.suspended = true
+        opQ.isSuspended = true
         
-        keyValueObservingExpectationForObject(opQ, keyPath: "operationCount", expectedValue: 0)
+        keyValueObservingExpectation(for: opQ, keyPath: "operationCount", expectedValue: 0)
         
         opQ.addOperation(operation)
         opQ.addOperation(operation2)
         operation.cancel()
         
-        opQ.suspended = false
+        opQ.isSuspended = false
         
-        waitForExpectationsWithTimeout(2.0, handler: nil)
+        waitForExpectations(timeout: 2.0, handler: nil)
     }
     
 //    This test exhibits odd behavior that needs to be investigated at some point.
@@ -703,30 +705,30 @@ class PSOperationsTests: XCTestCase {
             XCTFail("This should not run")
         }
 
-        keyValueObservingExpectationForObject(operation, keyPath: "isFinished") {(op, changes) -> Bool in
-            if let op = op as? NSOperation {
-                return op.finished
+        keyValueObservingExpectation(for: operation, keyPath: "isFinished") {(op, changes) -> Bool in
+            if let op = op as? Operation {
+                return op.isFinished
             }
 
             return false
         }
 
         let opQ = OperationQueue()
-        opQ.suspended = true
+        opQ.isSuspended = true
         opQ.addOperation(operation)
         operation.cancel()
-        opQ.suspended = false
+        opQ.isSuspended = false
 
 
-        waitForExpectationsWithTimeout(1.0) {
+        waitForExpectations(timeout: 1.0) {
             _ in
-            XCTAssertTrue(operation.cancelled, "")
-            XCTAssertTrue(operation.finished, "")
+            XCTAssertTrue(operation.isCancelled, "")
+            XCTAssertTrue(operation.isFinished, "")
         }
     }
     
     func testCancelOperation_cancelAfterStart() {
-        let exp = expectationWithDescription("")
+        let exp = expectation(description: "")
         
         var operation: BlockOperation?
         operation = BlockOperation {
@@ -738,7 +740,7 @@ class PSOperationsTests: XCTestCase {
         
         opQ.addOperation(operation!)
         
-        waitForExpectationsWithTimeout(1.0) {
+        waitForExpectations(timeout: 1.0) {
             _ in
             XCTAssertEqual(opQ.operationCount, 0, "")
         }
@@ -756,9 +758,9 @@ class PSOperationsTests: XCTestCase {
             op.produceOperation(producedOperation)
         }
         
-        let exp1 = expectationWithDescription("1")
-        let exp2 = expectationWithDescription("2")
-        let exp3 = expectationWithDescription("3")
+        let exp1 = expectation(description: "1")
+        let exp2 = expectation(description: "2")
+        let exp3 = expectation(description: "3")
         
         let blockObserver = BlockObserver (
             startHandler: {
@@ -779,7 +781,7 @@ class PSOperationsTests: XCTestCase {
         
         opQ.addOperation(op)
         
-        waitForExpectationsWithTimeout(1.0, handler: nil)
+        waitForExpectations(timeout: 1.0, handler: nil)
     }
     
     func testTimeoutObserver() {
@@ -801,7 +803,7 @@ class PSOperationsTests: XCTestCase {
         
         opQ.addOperation(delayOperation)
         
-        waitForExpectationsWithTimeout(0.9, handler: nil)
+        waitForExpectations(timeout: 0.9, handler: nil)
     }
     
     func testNoCancelledDepsCondition_aDepCancels_inGroupOperation() {
@@ -821,21 +823,21 @@ class PSOperationsTests: XCTestCase {
         
         let groupOp = GroupOperation(operations: [dependencyOperation, operation])
         
-        keyValueObservingExpectationForObject(dependencyOperation, keyPath: "isCancelled") {
+        keyValueObservingExpectation(for: dependencyOperation, keyPath: "isCancelled") {
             (op, changes) -> Bool in
             
-            if let op = op as? NSOperation {
-                return op.cancelled
+            if let op = op as? Operation {
+                return op.isCancelled
             }
             
             return false
         }
         
-        keyValueObservingExpectationForObject(operation, keyPath: "isCancelled") {
+        keyValueObservingExpectation(for: operation, keyPath: "isCancelled") {
             (op, changes) -> Bool in
             
-            if let op = op as? NSOperation {
-                return op.cancelled
+            if let op = op as? Operation {
+                return op.isCancelled
             }
             
             return false
@@ -854,19 +856,19 @@ class PSOperationsTests: XCTestCase {
         let opQ = OperationQueue()
         opQ.addOperation(groupOp)
         
-        waitForExpectationsWithTimeout(1.0) {
+        waitForExpectations(timeout: 1.0) {
             _ in
             XCTAssertEqual(opQ.operationCount, 0, "")
         }
     }
     
     func testOperationCompletionBlock() {
-        let executingExpectation = expectationWithDescription("block")
-        let completionExpectation = expectationWithDescription("completion")
+        let executingExpectation = expectation(description: "block")
+        let completionExpectation = expectation(description: "completion")
         
         let opQueue = OperationQueue()
         
-        let op = NSBlockOperation { () -> Void in
+        let op = BlockOperation { () -> Void in
             executingExpectation.fulfill()
         }
         
@@ -876,16 +878,16 @@ class PSOperationsTests: XCTestCase {
         
         opQueue.addOperation(op)
         
-        waitForExpectationsWithTimeout(1.0, handler: nil)
+        waitForExpectations(timeout: 1.0, handler: nil)
     }
     
     func testBlockOperationCanBeCancelledWhileExecuting() {
         
-        let exp = expectationWithDescription("")
+        let exp = expectation(description: "")
         
         var blockOperation: BlockOperation!
         blockOperation = BlockOperation {
-            XCTAssertFalse(blockOperation.finished)
+            XCTAssertFalse(blockOperation.isFinished)
             blockOperation.cancel()
             exp.fulfill()
         }
@@ -893,19 +895,19 @@ class PSOperationsTests: XCTestCase {
         let q = OperationQueue()
         q.addOperation(blockOperation)
         
-        keyValueObservingExpectationForObject(blockOperation, keyPath: "isCancelled") {
+        keyValueObservingExpectation(for: blockOperation, keyPath: "isCancelled") {
             (op, changes) -> Bool in
 
-            guard let op = op as? NSOperation else { return false }
-            return op.cancelled
+            guard let op = op as? Operation else { return false }
+            return op.isCancelled
         }
         
-        waitForExpectationsWithTimeout(2.0, handler: nil)
+        waitForExpectations(timeout: 2.0, handler: nil)
     }
     
     func testDelayOperationIsCancellableAndNotFinishedTillDelayTime() {
         
-        let exp = expectationWithDescription("")
+        let exp = expectation(description: "")
         
         let delayOp = DelayOperation(interval: 2)
         let blockOp = BlockOperation {
@@ -927,11 +929,11 @@ class PSOperationsTests: XCTestCase {
             return op.cancelled
         }
         
-        waitForExpectationsWithTimeout(2.0, handler: nil)
+        waitForExpectations(timeout: 2.0, handler: nil)
     }
     
     func testConcurrentOpsWithBlockingOp() {
-        let exp = expectationWithDescription("")
+        let exp = expectation(description: "")
         
         let delayOp = DelayOperation(interval: 4)
         let blockOp = BlockOperation {
@@ -946,10 +948,10 @@ class PSOperationsTests: XCTestCase {
         q.addOperation(delayOp)
         q.addOperation(blockOp)
         
-        keyValueObservingExpectationForObject(q, keyPath: "operationCount") {
+        keyValueObservingExpectation(for: q, keyPath: "operationCount") {
             (opQ, changes) -> Bool in
             
-            if let opQ = opQ as? NSOperationQueue where opQ.operationCount == 1 {
+            if let opQ = opQ as? OperationQueue, opQ.operationCount == 1 {
                 if let _ = opQ.operations.first as? DelayOperation {
                     return true
                 }
@@ -958,7 +960,7 @@ class PSOperationsTests: XCTestCase {
             return false
         }
         
-        waitForExpectationsWithTimeout(2.0, handler: nil)
+        waitForExpectations(timeout: 2.0, handler: nil)
     }
     
     func testMoveFromPendingToFinishingByWayOfCancelAfterEnteringQueue() {
@@ -972,17 +974,17 @@ class PSOperationsTests: XCTestCase {
         q.addOperation(delay)
         op.cancel()
         
-        keyValueObservingExpectationForObject(q, keyPath: "operationCount") {
+        keyValueObservingExpectation(for: q, keyPath: "operationCount") {
             (opQ, changes) -> Bool in
             
-            if let opQ = opQ as? NSOperationQueue where opQ.operationCount == 0 {
+            if let opQ = opQ as? OperationQueue, opQ.operationCount == 0 {
                 return true
             }
             
             return false
         }
         
-        waitForExpectationsWithTimeout(0.5, handler: nil)
+        waitForExpectations(timeout: 0.5, handler: nil)
         
     }
     
@@ -1023,7 +1025,7 @@ class PSOperationsTests: XCTestCase {
         var requiredToPassCount = 25_000
         let q = OperationQueue()
         
-        let exp = expectationWithDescription("requiredToPassCount")
+        let exp = expectation(description: "requiredToPassCount")
         
         func go() {
             
@@ -1033,7 +1035,7 @@ class PSOperationsTests: XCTestCase {
             }
             
             let blockOp = BlockOperation {
-                (finishBlock: Void -> Void) in
+                (finishBlock: (Void) -> Void) in
                 finishBlock()
                 go()
             }
@@ -1051,7 +1053,7 @@ class PSOperationsTests: XCTestCase {
         
         go()
         
-        waitForExpectationsWithTimeout(15) {
+        waitForExpectations(timeout: 15) {
             _ in
             
             //if opCount != requiredToPassCount, the queue is frozen
@@ -1066,9 +1068,9 @@ class PSOperationsTests: XCTestCase {
         let opQueue = OperationQueue()
         opQueue.maxConcurrentOperationCount = 1;
         
-        let exp1 = expectationWithDescription("1")
-        let exp2 = expectationWithDescription("2")
-        let exp3 = expectationWithDescription("3")
+        let exp1 = expectation(description: "1")
+        let exp2 = expectation(description: "2")
+        let exp3 = expectation(description: "3")
         
         let op1 = BlockOperation {
             exp1.fulfill()
@@ -1085,25 +1087,25 @@ class PSOperationsTests: XCTestCase {
         opQueue.addOperation(op2)
         opQueue.addOperation(op3)
         
-        waitForExpectationsWithTimeout(1.0, handler: nil)
+        waitForExpectations(timeout: 1.0, handler: nil)
     }
     func testOperationFinishedWithErrors() {
         let opQ = OperationQueue()
         
         class ErrorOp : Operation {
             
-            let sema = dispatch_semaphore_create(0)
+            let sema = DispatchSemaphore(value: 0)
             
             override func execute() {
                 finishWithError(NSError(code: .ExecutionFailed))
             }
             
-            override func finished(errors: [NSError]) {
-                dispatch_semaphore_signal(sema)
+            override func finished(_ errors: [NSError]) {
+                sema.signal()
             }
             
             override func waitUntilFinished() {
-                dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER)
+                sema.wait(timeout: DispatchTime.distantFuture)
             }
         }
         
@@ -1119,18 +1121,18 @@ class PSOperationsTests: XCTestCase {
         
         class ErrorOp : Operation {
             
-            let sema = dispatch_semaphore_create(0)
+            let sema = DispatchSemaphore(value: 0)
             
             override func execute() {
                 cancelWithError(NSError(code: .ExecutionFailed))
             }
             
-            override func finished(errors: [NSError]) {
-                dispatch_semaphore_signal(sema)
+            override func finished(_ errors: [NSError]) {
+                sema.signal()
             }
             
             override func waitUntilFinished() {
-                dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER)
+                sema.wait(timeout: DispatchTime.distantFuture)
             }
         }
         
