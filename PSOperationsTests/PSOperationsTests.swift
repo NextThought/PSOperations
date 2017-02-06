@@ -71,7 +71,7 @@ class TestObserver: OperationObserver {
 
 class PSOperationsTests: XCTestCase {
     
-    private lazy var __once: () = { () -> Void in
+    fileprivate lazy var __once: () = { () -> Void in
             
         }()
     
