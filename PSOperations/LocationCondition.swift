@@ -110,8 +110,8 @@ class LocationPermissionOperation: Operation {
         
         #if os(tvOS)
             switch (CLLocationManager.authorizationStatus(), usage) {
-            case (.NotDetermined, _):
-                dispatch_async(dispatch_get_main_queue()) {
+            case (.notDetermined, _):
+                DispatchQueue.main.async {
                     self.requestPermission()
                 }
                 
@@ -139,7 +139,7 @@ class LocationPermissionOperation: Operation {
         
         #if os(tvOS)
             switch usage {
-            case .WhenInUse:
+            case .whenInUse:
                 key = "NSLocationWhenInUseUsageDescription"
                 manager?.requestWhenInUseAuthorization()
             }
