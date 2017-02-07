@@ -73,7 +73,7 @@ private class PushAuthorizer {
         if let _ = self.token {
             completion(.authorized)
         } else if let error = error {
-            completion(.Error(error))
+            completion(.error(error))
         } else {
             completion(.notDetermined)
         }

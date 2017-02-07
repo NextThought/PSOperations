@@ -31,7 +31,7 @@ extension EKEntityType: CapabilityType {
             if granted {
                 completion(.authorized)
             } else if let error = error {
-                completion(.Error(error as NSError))
+                completion(.error(error as NSError))
             } else {
                 completion(.notAvailable)
             }

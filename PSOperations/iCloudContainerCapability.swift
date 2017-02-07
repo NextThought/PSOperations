@@ -40,7 +40,7 @@ private func verifyAccountStatus(_ container: CKContainer, permission: CKApplica
             case .restricted: completion(.notAvailable)
             case .couldNotDetermine:
                 let error = accountError ?? NSError(domain: CKErrorDomain, code: CKError.notAuthenticated.rawValue, userInfo: nil)
-                completion(.Error(error as NSError))
+                completion(.error(error as NSError))
             case .available:
                 if permission != [] {
                     verifyPermission(container, permission: permission, shouldRequest: shouldRequest, completion: completion)
@@ -64,7 +64,7 @@ private func verifyPermission(_ container: CKContainer, permission: CKApplicatio
             case .granted: completion(.authorized)
             case .couldNotComplete:
                 let error = permissionError ?? NSError(domain: CKErrorDomain, code: CKError.permissionFailure.rawValue, userInfo: nil)
-                completion(.Error(error as NSError))
+                completion(.error(error as NSError))
         }
     }
 }
@@ -78,7 +78,7 @@ private func requestPermission(_ container: CKContainer, permission: CKApplicati
                 case .granted: completion(.authorized)
                 case .couldNotComplete:
                     let error = requestError ?? NSError(domain: CKErrorDomain, code: CKError.permissionFailure.rawValue, userInfo: nil)
-                    completion(.Error(error as NSError))
+                    completion(.error(error as NSError))
             }
         }
     }

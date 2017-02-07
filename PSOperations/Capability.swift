@@ -30,7 +30,7 @@ public enum CapabilityStatus {
     case notAvailable
     
     /// There was an error requesting the status of the capability
-    case Error(Error)
+    case error(Error)
 }
 
 public protocol CapabilityType {
@@ -125,7 +125,7 @@ private extension CapabilityStatus {
             case .authorized: return nil
             case .denied: return NSError(capabilityErrorCode: .denied)
             case .notAvailable: return NSError(capabilityErrorCode: .notAvailable)
-            case .Error(let e): return e
+            case .error(let e): return e
         }
     }
 }
