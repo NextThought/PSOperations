@@ -67,7 +67,7 @@ func ==(lhs: OperationConditionResult, rhs: OperationConditionResult) -> Bool {
     switch (lhs, rhs) {
     case (.satisfied, .satisfied):
         return true
-    case (.failed(let lError), .failed(let rError)) where lError.localizedDescription == rError.localizedDescription:
+    case (.failed(let lError), .failed(let rError)) where (lError as NSError) == (rError as NSError):
         return true
     default:
         return false
