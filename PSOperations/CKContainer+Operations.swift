@@ -26,7 +26,7 @@ extension CKContainer {
             operation fails. If the verification was successful, this value will
         be `nil`.
     */
-    func verifyPermission(_ permission: CKApplicationPermissions, requestingIfNecessary shouldRequest: Bool = false, completion: @escaping (NSError?) -> Void) {
+    func verifyPermission(_ permission: CKApplicationPermissions, requestingIfNecessary shouldRequest: Bool = false, completion: @escaping (Error?) -> Void) {
         verifyAccountStatus(self, permission: permission, shouldRequest: shouldRequest, completion: completion)
     }
 }
@@ -35,7 +35,7 @@ extension CKContainer {
     Make these helper functions instead of helper methods, so we don't pollute
     `CKContainer`.
 */
-private func verifyAccountStatus(_ container: CKContainer, permission: CKApplicationPermissions, shouldRequest: Bool, completion: @escaping (NSError?) -> Void) {
+private func verifyAccountStatus(_ container: CKContainer, permission: CKApplicationPermissions, shouldRequest: Bool, completion: @escaping (Error?) -> Void) {
     container.accountStatus { accountStatus, accountError in
         if accountStatus == .available {
             if permission != CKApplicationPermissions() {
@@ -47,12 +47,12 @@ private func verifyAccountStatus(_ container: CKContainer, permission: CKApplica
         }
         else {
             let error = accountError ?? NSError(domain: CKErrorDomain, code: CKError.notAuthenticated.rawValue, userInfo: nil)
-            completion(error as NSError?)
+            completion(error as Error?)
         }
     }
 }
 
-private func verifyPermission(_ container: CKContainer, permission: CKApplicationPermissions, shouldRequest: Bool, completion: @escaping (NSError?) -> Void) {
+private func verifyPermission(_ container: CKContainer, permission: CKApplicationPermissions, shouldRequest: Bool, completion: @escaping (Error?) -> Void) {
     container.status(forApplicationPermission: permission) { permissionStatus, permissionError in
         if permissionStatus == .granted {
             completion(nil)
@@ -62,12 +62,12 @@ private func verifyPermission(_ container: CKContainer, permission: CKApplicatio
         }
         else {
             let error = permissionError ?? NSError(domain: CKErrorDomain, code: CKError.permissionFailure.rawValue, userInfo: nil)
-            completion(error as NSError?)
+            completion(error)
         }
     }
 }
 
-private func requestPermission(_ container: CKContainer, permission: CKApplicationPermissions, completion: @escaping (NSError?) -> Void) {
+private func requestPermission(_ container: CKContainer, permission: CKApplicationPermissions, completion: @escaping (Error?) -> Void) {
     DispatchQueue.main.async {
         container.requestApplicationPermission(permission) { requestStatus, requestError in
             if requestStatus == .granted {
@@ -75,7 +75,7 @@ private func requestPermission(_ container: CKContainer, permission: CKApplicati
             }
             else {
                 let error = requestError ?? NSError(domain: CKErrorDomain, code: CKError.permissionFailure.rawValue, userInfo: nil)
-                completion(error as NSError?)
+                completion(error)
             }
         }
     }

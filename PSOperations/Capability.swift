@@ -30,7 +30,7 @@ public enum CapabilityStatus {
     case notAvailable
     
     /// There was an error requesting the status of the capability
-    case Error(NSError)
+    case Error(Error)
 }
 
 public protocol CapabilityType {
@@ -119,7 +119,7 @@ private extension NSError {
 }
 
 private extension CapabilityStatus {
-    var error: NSError? {
+    var error: Error? {
         switch self {
             case .notDetermined: return NSError(capabilityErrorCode: .notDetermined)
             case .authorized: return nil

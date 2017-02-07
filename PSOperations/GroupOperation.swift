@@ -26,7 +26,7 @@ open class GroupOperation: Operation {
     fileprivate let startingOperation = Foundation.BlockOperation(block: {})
     fileprivate let finishingOperation = Foundation.BlockOperation(block: {})
 
-    fileprivate var aggregatedErrors = [NSError]()
+    fileprivate var aggregatedErrors = [Error]()
     
     public convenience init(operations: Foundation.Operation...) {
         self.init(operations: operations)
@@ -64,11 +64,11 @@ open class GroupOperation: Operation {
         Errors aggregated through this method will be included in the final array 
         of errors reported to observers and to the `finished(_:)` method.
     */
-    public final func aggregateError(_ error: NSError) {
+    public final func aggregateError(_ error: Error) {
         aggregatedErrors.append(error)
     }
     
-    open func operationDidFinish(_ operation: Foundation.Operation, withErrors errors: [NSError]) {
+    open func operationDidFinish(_ operation: Foundation.Operation, withErrors errors: [Error]) {
         // For use by subclassers.
     }
 }
@@ -99,7 +99,7 @@ extension GroupOperation: OperationQueueDelegate {
 
     }
     
-    final public func operationQueue(_ operationQueue: OperationQueue, operationDidFinish operation: Foundation.Operation, withErrors errors: [NSError]) {
+    final public func operationQueue(_ operationQueue: OperationQueue, operationDidFinish operation: Foundation.Operation, withErrors errors: [Error]) {
         aggregatedErrors.append(contentsOf: errors)
         
         if operation === finishingOperation {

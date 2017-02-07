@@ -51,9 +51,9 @@ public protocol OperationCondition {
 */
 public enum OperationConditionResult {
     case satisfied
-    case failed(NSError)
+    case failed(Error)
     
-    var error: NSError? {
+    var error: Error? {
         switch self {
         case .failed(let error):
             return error
@@ -67,7 +67,7 @@ func ==(lhs: OperationConditionResult, rhs: OperationConditionResult) -> Bool {
     switch (lhs, rhs) {
     case (.satisfied, .satisfied):
         return true
-    case (.failed(let lError), .failed(let rError)) where lError == rError:
+    case (.failed(let lError), .failed(let rError)) where lError.localizedDescription == rError.localizedDescription:
         return true
     default:
         return false
@@ -78,7 +78,7 @@ func ==(lhs: OperationConditionResult, rhs: OperationConditionResult) -> Bool {
 // MARK: Evaluate Conditions
 
 struct OperationConditionEvaluator {
-    static func evaluate(_ conditions: [OperationCondition], operation: Operation, completion: @escaping ([NSError]) -> Void) {
+    static func evaluate(_ conditions: [OperationCondition], operation: Operation, completion: @escaping ([Error]) -> Void) {
         // Check conditions.
         let conditionGroup = DispatchGroup()
 

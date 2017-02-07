@@ -32,7 +32,7 @@ struct TestCondition: OperationCondition {
 
 class TestObserver: OperationObserver {
     
-    var errors: [NSError]?
+    var errors: [Error]?
     
     var didStartBlock: (()->())?
     var didEndBlock: (()->())?
@@ -59,7 +59,7 @@ class TestObserver: OperationObserver {
         }
     }
     
-    func operationDidFinish(_ operation: Operation, errors: [NSError]) {
+    func operationDidFinish(_ operation: Operation, errors: [Error]) {
         self.errors = errors
         
         if let didEndBlock = didEndBlock {
@@ -1100,7 +1100,7 @@ class PSOperationsTests: XCTestCase {
                 finishWithError(NSError(code: .ExecutionFailed))
             }
             
-            override func finished(_ errors: [NSError]) {
+            override func finished(_ errors: [Error]) {
                 sema.signal()
             }
             

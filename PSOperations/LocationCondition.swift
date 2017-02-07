@@ -44,7 +44,7 @@ public struct LocationCondition: OperationCondition {
         let enabled = CLLocationManager.locationServicesEnabled()
         let actual = CLLocationManager.authorizationStatus()
         
-        var error: NSError?
+        var error: Error?
         
         // There are several factors to consider when evaluating this condition
         switch (enabled, usage, actual) {

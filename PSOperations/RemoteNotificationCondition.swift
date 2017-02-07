@@ -31,7 +31,7 @@ public struct RemoteNotificationCondition: OperationCondition {
         ])
     }
     
-    static func didFailToRegister(_ error: NSError) {
+    static func didFailToRegister(_ error: Error) {
         NotificationCenter.default.post(name: Notification.Name(rawValue: RemoteNotificationName), object: nil, userInfo: [
             "error": error
         ])
