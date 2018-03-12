@@ -17,19 +17,19 @@ import Foundation
 open class Operation: Foundation.Operation {
     
     // use the KVO mechanism to indicate that changes to "state" affect other properties as well
-    class func keyPathsForValuesAffectingIsReady() -> Set<String> {
+    @objc class func keyPathsForValuesAffectingIsReady() -> Set<String> {
         return ["state", "cancelledState"]
     }
     
-    class func keyPathsForValuesAffectingIsExecuting() -> Set<String> {
+    @objc class func keyPathsForValuesAffectingIsExecuting() -> Set<String> {
         return ["state"]
     }
     
-    class func keyPathsForValuesAffectingIsFinished() -> Set<String> {
+    @objc class func keyPathsForValuesAffectingIsFinished() -> Set<String> {
         return ["state"]
     }
     
-    class func keyPathsForValuesAffectingIsCancelled() -> Set<String> {
+    @objc class func keyPathsForValuesAffectingIsCancelled() -> Set<String> {
         return ["cancelledState"]
     }
     
