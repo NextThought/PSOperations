@@ -174,7 +174,7 @@ open class Operation: Foundation.Operation {
         return _ready
     }
     
-    open var userInitiated: Bool {
+    @objc open var userInitiated: Bool {
         get {
             return qualityOfService == .userInitiated
         }
