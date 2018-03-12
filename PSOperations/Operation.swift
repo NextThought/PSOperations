@@ -17,20 +17,20 @@ import Foundation
 open class Operation: Foundation.Operation {
     
     // use the KVO mechanism to indicate that changes to "state" affect other properties as well
-    class func keyPathsForValuesAffectingIsReady() -> Set<NSObject> {
-        return ["state" as NSObject, "cancelledState" as NSObject]
+    class func keyPathsForValuesAffectingIsReady() -> Set<String> {
+        return ["state", "cancelledState"]
     }
     
-    class func keyPathsForValuesAffectingIsExecuting() -> Set<NSObject> {
-        return ["state" as NSObject]
+    class func keyPathsForValuesAffectingIsExecuting() -> Set<String> {
+        return ["state"]
     }
     
-    class func keyPathsForValuesAffectingIsFinished() -> Set<NSObject> {
-        return ["state" as NSObject]
+    class func keyPathsForValuesAffectingIsFinished() -> Set<String> {
+        return ["state"]
     }
     
-    class func keyPathsForValuesAffectingIsCancelled() -> Set<NSObject> {
-        return ["cancelledState" as NSObject]
+    class func keyPathsForValuesAffectingIsCancelled() -> Set<String> {
+        return ["cancelledState"]
     }
     
     // MARK: State Management
